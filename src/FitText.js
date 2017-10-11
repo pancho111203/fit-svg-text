@@ -1,6 +1,6 @@
 import React from 'react';
 import _ from 'ramda';
-const WorkerAlg = require('worker-loader!./algorithm_worker');
+import WorkerAlg from './algorithm.worker';
 
 class FitText extends React.Component {
   constructor(props, context) {
