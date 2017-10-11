@@ -12,9 +12,8 @@ const FitSVGTextRect = ({ width, height, text }) =>
         dy="1em"
         width={width}
         height={height}
-      >
-        {text}
-      </FitSVGText>
+        text={text}
+      />
     </g>
   </svg>;
 

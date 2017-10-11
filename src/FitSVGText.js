@@ -7,12 +7,16 @@ export default class FitSVGText extends React.Component {
 
     this.state = {
       zoom: 1,
-      text: [this.props.children],
+      textLines: [this.props.text]
     };
   }
 
   componentDidMount() {
     this.fitText();
+  }
+
+  componentWillUpdate(newProps) {
+    //this.fitText();
   }
 
   findWordIndices = str => {
@@ -32,7 +36,7 @@ export default class FitSVGText extends React.Component {
 
   fitText() {
     // find the indices where words are, e.g. "hi you" => [[0, 1], [3, 5]]
-    const indices = this.findWordIndices(this.props.children);
+    const indices = this.findWordIndices(this.props.text);
 
     // create all possible ways this can be split into lines, e.g. [[[[[0, 1]], [[3, 5]]], [[0, 1], [3, 5]]]
     const compositions = getCompositions(indices);
@@ -41,6 +45,7 @@ export default class FitSVGText extends React.Component {
     const containerWidth = this.props.width;
 
     const textHeight = this.textElement.getBBox().height;
+    const wordWidths = [];
 
     compositions.forEach(lines => {
       lines.forEach(words => {
@@ -75,27 +80,26 @@ export default class FitSVGText extends React.Component {
 
     this.setState({
       zoom: best.maximumZoom,
-      text: best.map(words => {
+      textLines: best.map(words => {
         const startOfFirstWord = words[0][0];
         const endOfLastWord = words[words.length - 1][1];
 
-        return this.props.children.substring(startOfFirstWord, endOfLastWord);
+        return this.props.text.substring(startOfFirstWord, endOfLastWord);
       }),
     });
-
-    console.log(this.textElement.getComputedTextLength());
   }
 
   render() {
-    const { width, height, children, ...restProps } = this.props;
-
+    const { width, height, text, ...restProps } = this.props;
+    console.log(this.state.zoom);
+    console.log(this.state.textLines);
     return (
       <text
         {...restProps}
         ref={c => (this.textElement = c)}
         transform={`scale(${this.state.zoom}, ${this.state.zoom})`}
       >
-        {this.state.text.map((line, i) =>
+        {this.state.textLines.map((line, i) =>
           <tspan key={i} x={0} dy="1em">
             {line}
           </tspan>
