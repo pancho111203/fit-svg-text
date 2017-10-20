@@ -1,26 +1,34 @@
 import React from 'react';
 import _ from 'ramda';
-import WorkerAlg from './algorithm.worker';
+import WorkerAlg from './algorithm1.worker';
 
 class FitText extends React.Component {
   constructor(props, context) {
     super(props, context);
     this.referenceElement = null;
-    this.zoomedElement = null;
 
     this.wordLengths = null;
     this.spaceLength = null;
 
     this.state = {
-      bestSon: {
-        zoom: 3.508771929824561,
-        lines: ["Hello", "how", "are you", "im good"] // TODO make this array only show indeces (not be text specific)
-      }
+      bestSon: null
     }
 
     this.worker = new WorkerAlg;
-    this.worker.onmessage = (msg) => {
-      console.log(msg);
+    this.worker.onmessage = (e) => {
+      const receivedObject = e.data;
+
+      if (receivedObject.type === 'bestSon') {
+        const bestSon = receivedObject.data;
+        console.log('received bestSon from worker: ', bestSon);
+        if (bestSon.lineIndices && bestSon.lineWidth && bestSon.linesHeight) {
+          this.setState({
+            bestSon
+          });
+        }
+      } else if (receivedObject.type === 'log') {
+        console.log(receivedObject.data);
+      }
     }
   }
 
@@ -42,17 +50,18 @@ class FitText extends React.Component {
   componentDidUpdate(newProps) { // call didupdate to let the referenceElement update with new values
     if (this.referenceElement) {
       if (newProps.text !== this.props.text || newProps.width !== this.props.width || newProps.height !== this.props.height) {
-        if (newProps.text !== this.props.text) {
+        this.setState({
+          bestSon: null
+        }, () => {
           this.computeWordLengths(newProps.text, this.referenceElement);
           this.computeSpaceLength(newProps.text, this.referenceElement);
-        }
-
-        this.sendValuesToAlgorithm({
-          textLineHeight: this.referenceElement.getBBox().height,
-          width: newProps.width,
-          height: newProps.height,
-          wordLengths: this.wordLengths,
-          spaceLength: this.spaceLength,
+          this.sendValuesToAlgorithm({
+            textLineHeight: this.referenceElement.getBBox().height,
+            width: newProps.width,
+            height: newProps.height,
+            wordLengths: this.wordLengths,
+            spaceLength: this.spaceLength,
+          });
         });
       }
     }
@@ -92,6 +101,7 @@ class FitText extends React.Component {
   }
 
   sendValuesToAlgorithm = (data) => {
+    console.log('sent values:', data);
     this.worker.postMessage(data);
   }
 
@@ -99,6 +109,45 @@ class FitText extends React.Component {
   render() {
     const { width, height, text } = this.props;
     const { bestSon } = this.state;
+
+    let zoom = null;
+    let lines = null;
+    if (bestSon) {
+      const contentHeight = bestSon.linesHeight;
+
+      const verticalZoom = height / Math.ceil(contentHeight);
+      const horizontalZoom = width / Math.ceil(bestSon.lineWidth);
+
+      zoom = Math.min(
+        verticalZoom,
+        horizontalZoom
+      );
+
+      lines = [];
+      const regex = /\w+/g;
+      let wordMatch;
+      let i = 0;
+      let j = 1;
+      let currentLine = '';
+      while ((wordMatch = regex.exec(text))) {
+        if (currentLine.length > 0) {
+          currentLine = currentLine + ' ' + wordMatch[0];
+        } else {
+          currentLine = wordMatch[0];
+        }
+
+        i++;
+
+        if (i === bestSon.lineIndices[j]) { // should split on next word
+          lines.push(currentLine);
+          currentLine = '';
+          j++;
+        }
+      }
+      lines.push(currentLine);
+    }
+
+
     return (
       <div>
         <svg width={width} height={height}>
@@ -107,29 +156,13 @@ class FitText extends React.Component {
             <text
               x="0"
               y="0"
+              style={{ lineHeight: '5px' }}
               stroke="#000"
               dy="1em"
               ref={c => (this.referenceElement = c)}
+              transform={zoom ? `scale(${zoom}, ${zoom})` : ''}
             >
-              <tspan x={0} dy="1em">
-                {text}
-              </tspan>
-            </text>
-          </g>
-        </svg>
-        <br />
-        <svg width={width} height={height}>
-          <g>
-            <rect x="0" y="0" width={width} height={height} fill="#f99" />
-            <text
-              x="0"
-              y="0"
-              stroke="#000"
-              dy="1em"
-              ref={c => (this.zoomedElement = c)}
-              transform={_.prop('bestSon.zoom', this.state) ? `scale(${bestSon.zoom}, ${bestSon.zoom})` : ''}
-            >
-              {_.prop('bestSon.lines', this.state) ? bestSon.lines.map((line, i) =>
+              {lines ? lines.map((line, i) =>
                 <tspan key={i} x={0} dy="1em">
                   {line}
                 </tspan>
@@ -160,5 +193,8 @@ export default FitText;
 
 // Out:
 // { 
-//   lineIndices: [0, 2, 4, 5] 
+//   lineIndices: [0, 2, 4, 5],
+//   lineWidth: 55,
+//   lineHeight: 44
 // }
+// 
