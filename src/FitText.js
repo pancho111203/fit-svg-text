@@ -20,7 +20,6 @@ class FitText extends React.Component {
 
       if (receivedObject.type === 'bestSon') {
         const bestSon = receivedObject.data;
-        console.log('received bestSon from worker: ', bestSon);
         if (bestSon.lineIndices && bestSon.lineWidth && bestSon.linesHeight) {
           this.setState({
             bestSon
@@ -101,7 +100,6 @@ class FitText extends React.Component {
   }
 
   sendValuesToAlgorithm = (data) => {
-    console.log('sent values:', data);
     this.worker.postMessage(data);
   }
 

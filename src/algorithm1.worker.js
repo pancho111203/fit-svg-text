@@ -54,7 +54,8 @@ self.onmessage = function (msg) {
 // A(min) / D = linesHeight^2
 
 const HEURISTIC_LINES_WEIGHT = 2;
-const HEURISTIC_RANDOM_THRESHOLD = 0.01;
+const HEURISTIC_EXCESS_WEIGHT = 0.1;
+const HEURISTIC_RANDOM_THRESHOLD = 0.5;
 const HEURISTIC_BOOST = 10;
 
 function BestLineSplit(width, height, textLineHeight, wordLengths, spaceLength) {
@@ -134,11 +135,16 @@ BestLineSplit.prototype.heuristicLineSplit = function (heuristic, lineNr, wordNr
   }
 }
 
-BestLineSplit.prototype.heuristicExcess = function (heuristic) {
-  // TODO
-  // - Si añadimos mucho o si dejamos mucho hueco libre ambos casos son malos, y la heurística tiene que reflejar esto
-  // - también tiene que tener en cuenta la diferencia actual de ancho, el excess. Si es negativa aumentan las probabilidades de insertar una palabra más, y si es positiva se reducen
-  return heuristic;
+BestLineSplit.prototype.heuristicExcess = function (heuristic, currentTextWidth, nextTextWidth) {
+  // - Si añadimos mucho o si dejamos mucho hueco libre ambos casos son malos
+  const excessOnPut = nextTextWidth - this.currentMaxTextWidth;
+  const incessOnSplit = this.currentMaxTextWidth - currentTextWidth;
+
+  // si diff es positivo, es mejor hacer SPLIT ya que hay menos excess
+  let diffNormalized = (excessOnPut - incessOnSplit) / (excessOnPut + incessOnSplit); 
+  diffNormalized *= HEURISTIC_EXCESS_WEIGHT;
+  
+  return heuristic + diffNormalized;
 }
 
 BestLineSplit.prototype.calculateLineSplit = function () {
@@ -187,15 +193,15 @@ BestLineSplit.prototype.calculateLineSplit = function () {
         // line should be split or currentMaxTextWidth needs to increase
         // TODO this is temporal heristic, good one should depend on lines left
         // HEURISTIC DESIGN:
-        // - 1: split, -1: put
+        //  1: split, -1: put
         let heuristic = 0;
         workerLog(`Heuristic start: ${heuristic}`);
 
         heuristic = this.heuristicLineSplit(heuristic, lineNr, wordNr);
         workerLog(`Heuristic after line split: ${heuristic}`);
 
-        // TODO
-        heuristic = this.heuristicExcess(heuristic);
+        heuristic = this.heuristicExcess(heuristic, currentTextWidth, nextTextWidth);
+        workerLog(`Heuristic after excess: ${heuristic}`);
 
         // - put always at least 1 word in the line 
         if (wordsAdded === 0) {
@@ -224,10 +230,10 @@ BestLineSplit.prototype.calculateLineSplit = function () {
 }
 
 function workerLog(data) {
-  // postMessage({
-  //   type: 'log',
-  //   data
-  // });
+  postMessage({
+    type: 'log',
+    data
+  });
 }
 
 function getRandom(min, max) {
