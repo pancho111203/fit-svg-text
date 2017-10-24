@@ -1,6 +1,6 @@
 import React from 'react';
 import _ from 'ramda';
-import WorkerAlg from './algorithm1.worker';
+import WorkerAlg from './algorithm2.worker';
 
 class FitText extends React.Component {
   constructor(props, context) {
@@ -26,7 +26,7 @@ class FitText extends React.Component {
           });
         }
       } else if (receivedObject.type === 'log') {
-        console.log(receivedObject.data);
+        console.dir(receivedObject.data);
       }
     }
   }
@@ -35,7 +35,13 @@ class FitText extends React.Component {
     if (this.referenceElement) {
       this.computeWordLengths(this.props.text);
       this.computeSpaceLength(this.props.text);
-
+      console.log({
+        textLineHeight: this.referenceElement.getBBox().height,
+        width: this.props.width,
+        height: this.props.height,
+        wordLengths: this.wordLengths,
+        spaceLength: this.spaceLength,
+      });
       this.sendValuesToAlgorithm({
         textLineHeight: this.referenceElement.getBBox().height,
         width: this.props.width,
@@ -115,7 +121,7 @@ class FitText extends React.Component {
 
       const verticalZoom = height / Math.ceil(contentHeight);
       const horizontalZoom = width / Math.ceil(bestSon.lineWidth);
-
+      console.log(bestSon);
       zoom = Math.min(
         verticalZoom,
         horizontalZoom
@@ -144,7 +150,6 @@ class FitText extends React.Component {
       }
       lines.push(currentLine);
     }
-
 
     return (
       <div>
