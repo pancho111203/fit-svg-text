@@ -146,7 +146,7 @@ class BestLineSplit {
           heuristic *= config[3];
 
           workerLog(`FINAL HEURISTIC: ${heuristic}`, 0)
-          if (heuristic > getRandom(-config[2], config[2])) {
+          if (heuristic > 0.5) {
             workerLog('Line Split (heuristic decision)', 0);
             break;
           } else {

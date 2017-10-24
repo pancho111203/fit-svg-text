@@ -35,13 +35,6 @@ class FitText extends React.Component {
     if (this.referenceElement) {
       this.computeWordLengths(this.props.text);
       this.computeSpaceLength(this.props.text);
-      console.log({
-        textLineHeight: this.referenceElement.getBBox().height,
-        width: this.props.width,
-        height: this.props.height,
-        wordLengths: this.wordLengths,
-        spaceLength: this.spaceLength,
-      });
       this.sendValuesToAlgorithm({
         textLineHeight: this.referenceElement.getBBox().height,
         width: this.props.width,
@@ -121,7 +114,6 @@ class FitText extends React.Component {
 
       const verticalZoom = height / Math.ceil(contentHeight);
       const horizontalZoom = width / Math.ceil(bestSon.lineWidth);
-      console.log(bestSon);
       zoom = Math.min(
         verticalZoom,
         horizontalZoom
@@ -150,6 +142,8 @@ class FitText extends React.Component {
       }
       lines.push(currentLine);
     }
+
+    console.log(zoom);
 
     return (
       <div>

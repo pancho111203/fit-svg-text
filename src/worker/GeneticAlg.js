@@ -2,7 +2,7 @@ import _ from 'ramda';
 
 import { getRandom, getRandomInt, workerLog, clone } from './helpers';
 import BestLineSplit from './BestLineSplit';
-import { MIN_MAX_CONFIGS } from './config';
+import { MIN_MAX_CONFIGS, DEFAULT_CONFIG } from './config';
 
 class GeneticAlg {
   constructor(problemData) {
@@ -21,6 +21,17 @@ class GeneticAlg {
   }
 
   evolve = () => {
+    if (this.configuration.steps === 0) {
+      const computed = this.compute(DEFAULT_CONFIG);
+      const ind = {
+        config: DEFAULT_CONFIG,
+        computed,
+        fitness: this.fitness(DEFAULT_CONFIG, computed)
+      }
+      this.generationResult([ind], this.calculateStats([ind]));
+      return;
+    }
+
     let gen = [];
     for (let i = 0; i < this.configuration.size; ++i) {
       gen.push({
@@ -59,7 +70,8 @@ class GeneticAlg {
         const childs = this.crossover(selectedPair[0], selectedPair[1]).map((child) => {
           return this.mutate(child);
         });
-        newGenConfigs.push(...childs);
+        newGenConfigs.push(childs[0]);
+        newGenConfigs.push(childs[1]);
       }
 
       gen = newGenConfigs.map((config) => {
@@ -145,7 +157,20 @@ class GeneticAlg {
   }
 
   fitness = (config, computed) => {
-    return computed.lineWidth + computed.linesHeight;
+    // TODO setup way of evaluating results
+    // TODO try with diff heuristics
+    // HISTORY    return computed.lineWidth + computed.linesHeight;
+//    return (computed.lineWidth / computed.linesHeight) - (this.problemData.width / this.problemData.height);
+//    return (computed.lineWidth / computed.linesHeight) - (this.problemData.width / this.problemData.height);
+    const wSum = computed.lineWidth + this.problemData.width;
+    const hSum = computed.linesHeight + this.problemData.height;
+
+    const aW = computed.lineWidth / wSum;
+    const bW = this.problemData.width / wSum;
+    const aH = computed.linesHeight / hSum;
+    const bH = this.problemData.height / hSum;
+
+    return Math.abs(aW - bW) + Math.abs(aH - bH);
   }
 
   replace = (sortedGen) => {
