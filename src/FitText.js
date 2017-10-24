@@ -1,6 +1,6 @@
 import React from 'react';
 import _ from 'ramda';
-import WorkerAlg from './algorithm2.worker';
+import WorkerAlg from './algorithm.worker';
 
 class FitText extends React.Component {
   constructor(props, context) {
@@ -142,8 +142,6 @@ class FitText extends React.Component {
       }
       lines.push(currentLine);
     }
-
-    console.log(zoom);
 
     return (
       <div>

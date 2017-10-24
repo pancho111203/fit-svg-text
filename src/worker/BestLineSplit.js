@@ -46,7 +46,6 @@ class BestLineSplit {
   }
 
   // A(min) = textLineHeight * (wordLengths * words + spaceLength * (words - 1))
-  // TODO should take into account that spaces at the end of lines are not included into end result ?
   getMinTextArea = () => {
     return this.textLineHeight * this.getLengthOfWords();
   }
@@ -124,8 +123,6 @@ class BestLineSplit {
         } else {
           workerLog('Deciding with heuristic', 0)
 
-          // line should be split or currentMaxTextWidth needs to increase
-          // TODO this is temporal heristic, good one should depend on lines left
           // HEURISTIC DESIGN:
           //  1: split, -1: put
           let heuristic = 0;
