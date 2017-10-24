@@ -1,6 +1,7 @@
 import React from 'react';
 import _ from 'ramda';
 import WorkerAlg from './algorithm.worker';
+import ResultGraph from './ResultGraph';
 
 class FitText extends React.Component {
   constructor(props, context) {
@@ -11,7 +12,8 @@ class FitText extends React.Component {
     this.spaceLength = null;
 
     this.state = {
-      bestSon: null
+      bestSon: null,
+      stats: []
     }
 
     this.worker = new WorkerAlg;
@@ -20,9 +22,16 @@ class FitText extends React.Component {
 
       if (receivedObject.type === 'bestSon') {
         const bestSon = receivedObject.data;
+        const recStat = receivedObject.stats;
         if (bestSon.lineIndices && bestSon.lineWidth && bestSon.linesHeight) {
+          const i = this.state.stats.length + 1;
+          const newStats = _.append({
+            ...recStat,
+            index: i
+          }, this.state.stats);
           this.setState({
-            bestSon
+            bestSon,
+            stats: newStats
           });
         }
       } else if (receivedObject.type === 'log') {
@@ -144,7 +153,7 @@ class FitText extends React.Component {
     }
 
     return (
-      <div>
+      <div style={styles.container}>
         <svg width={width} height={height}>
           <g>
             <rect x="0" y="0" width={width} height={height} fill="#f99" />
@@ -170,8 +179,15 @@ class FitText extends React.Component {
             </text>
           </g>
         </svg>
+        {this.props.showResultGraph ? <ResultGraph stats={this.state.stats} /> : null}
       </div>
     );
+  }
+}
+
+const styles = {
+  container: {
+    display: 'flex'
   }
 }
 

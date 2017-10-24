@@ -11,13 +11,10 @@ self.onmessage = function (msg) {
 
   genetic = new GeneticAlg(problemData);
   genetic.addBestSonCallback((bestSon, stats) => {
-    workerLog(`STATS`, 4);
-    workerLog(stats, 4);
-    workerLog(`bestSon`, 4);
-    workerLog(bestSon, 4);
     postMessage({
       type: 'bestSon',
-      data: bestSon
+      data: bestSon,
+      stats
     });
   });
   genetic.evolve();
