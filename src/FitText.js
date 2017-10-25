@@ -3,6 +3,7 @@ import _ from 'ramda';
 import WorkerAlg from './algorithm.worker';
 import ResultGraphGenetic from './ResultGraphGenetic';
 import ResultGraphSimulated from './ResultGraphSimulated';
+import ResultSingleRun from './ResultSingleRun';
 
 class FitText extends React.Component {
   constructor(props, context) {
@@ -14,8 +15,11 @@ class FitText extends React.Component {
 
     this.state = {
       bestSon: null,
-      stats: []
+      stats: [],
+      bestConfig: null
     }
+
+    if (this.props.resultsGatherer) this.props.resultsGatherer.link();
 
     this.worker = new WorkerAlg;
     this.worker.onmessage = (e) => {
@@ -24,25 +28,31 @@ class FitText extends React.Component {
       if (receivedObject.type === 'bestSon') {
         const bestSon = receivedObject.data;
         const recStat = receivedObject.stats;
+        const recConfig = receivedObject.config;
         if (bestSon.lineIndices && bestSon.lineWidth && bestSon.linesHeight) {
-          if (!recStat) {
-            this.setState({
-              bestSon
-            })
-          } else {
-            const i = this.state.stats.length + 1;
-            const newStats = _.append({
-              ...recStat,
-              index: i
-            }, this.state.stats);
-            this.setState({
-              bestSon,
-              stats: newStats
-            });
-          }
+          const i = this.state.stats.length + 1;
+          const newStats = _.append({
+            ...recStat,
+            index: i
+          }, this.state.stats);
+          this.setState({
+            bestSon,
+            stats: newStats,
+            bestConfig: recConfig
+          });
         }
       } else if (receivedObject.type === 'log') {
         console.dir(receivedObject.data);
+      } else if (receivedObject.type === 'finished') {
+        // TODO calculate time from start to finish
+        // TODO calculate how close it is to optimum
+        if (this.props.resultsGatherer) {
+          this.props.resultsGatherer.addResult({
+            bestSon: this.state.bestSon,
+            bestConfig: this.state.bestConfig,
+            bestFitness: this.state.stats[this.state.stats.length - 1].maximum
+          });
+        }
       }
     }
   }
@@ -121,7 +131,8 @@ class FitText extends React.Component {
   sendValuesToAlgorithm = (data) => {
     const msg = {
       data,
-      algorithm: this.props.algorithm
+      algorithm: this.props.algorithm,
+      config: this.props.config || null
     }
     this.worker.postMessage(msg);
   }
@@ -167,9 +178,17 @@ class FitText extends React.Component {
       lines.push(currentLine);
     }
 
+    let title = '';
+    if (this.props.algorithm === 'simulated') {
+      title = 'Enfriamiento Simulado';
+    } else if (this.props.algorithm === 'genetic') {
+      title = 'Algoritmo Genético';
+    } else if (this.props.algorithm === 'singlerun') {
+      title = 'Sin metaheuristica';
+    }
     return (
       <div style={styles.container}>
-        <h2>{this.props.algorithm === 'simulated' ? 'Enfriamiento Simulado' : 'Algoritmo Genético'}</h2>
+        <h2>{title}</h2>
         <div style={styles.innerContainer}>
           <svg width={width} height={height}>
             <g>
@@ -198,6 +217,7 @@ class FitText extends React.Component {
           </svg>
           {this.props.showResultGraph && this.props.algorithm === 'genetic' ? <ResultGraphGenetic style={styles.graphStyle} stats={this.state.stats} /> : null}
           {this.props.showResultGraph && this.props.algorithm === 'simulated' ? <ResultGraphSimulated style={styles.graphStyle} stats={this.state.stats} /> : null}
+          {this.props.showResultGraph && this.props.algorithm === 'singlerun' ? <ResultSingleRun style={styles.graphStyle} stats={this.state.stats} /> : null}
         </div>
       </div>
     );

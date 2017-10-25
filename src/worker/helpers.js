@@ -1,11 +1,9 @@
 
-export function workerLog(data, channel) {
-  if (channel === 10) {
-    postMessage({
-      type: 'log',
-      data
-    });
-  }
+export function workerLog(data) {
+  postMessage({
+    type: 'log',
+    data
+  });
 }
 
 export function getRandom(min, max) {
@@ -21,6 +19,6 @@ export function getRandomInt(min, max) {
 export function clone(obj) {
   if (obj == null || typeof obj !== "object")
     return obj;
-  
+
   return JSON.parse(JSON.stringify(obj));
 };

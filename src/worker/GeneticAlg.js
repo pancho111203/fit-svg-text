@@ -1,6 +1,6 @@
 import _ from 'ramda';
 
-import { getRandom, getRandomInt, workerLog, clone } from './helpers';
+import { getRandom, getRandomInt, clone } from './helpers';
 import BestLineSplit from './BestLineSplit';
 import { MIN_MAX_CONFIGS, DEFAULT_CONFIG } from './config';
 
@@ -82,6 +82,7 @@ class GeneticAlg {
         };
       })
     }
+    this.sendFinished();
   }
 
   terminate = () => {
@@ -171,17 +172,18 @@ class GeneticAlg {
   }
 
   generationResult = (population, stats) => {
-    workerLog(`COMPUTED AND SORTED GENERATION`, 2);
-    workerLog(population, 2);
     const bestSon = population[0];
+
     const result = bestSon.computed;
 
-    workerLog(`lineIndices: ${result.lineIndices}`, 2);
-    workerLog(`lineWidth: ${result.lineWidth}`, 2);
-    workerLog(`linesHeight: ${result.linesHeight}`, 2);
-
     this.bestSonCallbacks.forEach((cb) => {
-      cb(result, stats);
+      cb(result, stats, bestSon.config);
+    });
+  }
+
+  sendFinished = () => {
+    this.bestSonCallbacks.forEach((cb) => {
+      cb(null, null, null, true);
     });
   }
 }

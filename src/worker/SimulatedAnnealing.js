@@ -1,7 +1,7 @@
 import _ from 'ramda';
 
 import BestLineSplit from './BestLineSplit';
-import { getRandom, getRandomInt, workerLog, clone } from './helpers';
+import { getRandom, getRandomInt, clone } from './helpers';
 import { DEFAULT_CONFIG, MIN_MAX_CONFIGS } from './config';
 
 class SimmulatedAnnealing {
@@ -59,6 +59,8 @@ class SimmulatedAnnealing {
         this.foundNewBest(bestIndividual);
       }
     }
+
+    this.sendFinished();
   }
 
   shouldContinue = (iteration, temperature) => {
@@ -66,7 +68,6 @@ class SimmulatedAnnealing {
     if (iteration < this.configuration.maxIterations && !this.shouldEnd && temperature > 0.5) {
       return true;
     }
-    workerLog(`stopping at iteration: ${iteration}`, 10);
     return false;
   }
 
@@ -108,16 +109,17 @@ class SimmulatedAnnealing {
   foundNewBest = (individual) => {
     if (this.shouldEnd) return;
 
-    workerLog(`FOUND NEW BEST SOLUTION`, 9);
-    workerLog(individual, 9);
     const result = individual.computed;
 
-    workerLog(`lineIndices: ${result.lineIndices}`, 9);
-    workerLog(`lineWidth: ${result.lineWidth}`, 9);
-    workerLog(`linesHeight: ${result.linesHeight}`, 9);
     const stats = { maximum: individual.fitness }
     this.bestSonCallbacks.forEach((cb) => {
-      cb(result, stats);
+      cb(result, stats, individual.config);
+    });
+  }
+
+  sendFinished = () => {
+    this.bestSonCallbacks.forEach((cb) => {
+      cb(null, null, null, true);
     });
   }
 }

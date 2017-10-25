@@ -1,5 +1,4 @@
 import _ from 'ramda';
-import { workerLog, getRandom } from './helpers';
 
 class BestLineSplit {
   constructor(width, height, textLineHeight, wordLengths, spaceLength) {
@@ -59,21 +58,15 @@ class BestLineSplit {
     const linesLeft = Math.ceil(widthLeft / currentMaxTextWidth);
 
     // goes from -1 to 1; if positive: prefer split
-    const linesDiffNormalized = (linesFree - linesLeft) / (linesFree + linesLeft);
-
-    workerLog(`linesFree: ${linesFree}`, 0)
-    workerLog(`linesLeft: ${linesLeft}`, 0)
-    workerLog(`widthLeft: ${widthLeft}`, 0)
-    workerLog(`linesDiffNormalized: ${linesDiffNormalized}`, 0)
-
-    // - the closer linesFree is to 0, the stronger we enforce this (if it's one, we enforce always)
-    if (linesFree === 0) {
-      return -1;
+    const linesDiff = linesFree - linesLeft;
+    let linesDiffFunction;
+    if (linesDiff < 0) {
+      linesDiffFunction = Math.atan(linesDiff) - 1
     } else {
-      const linesHeuristicAfterLinesFreeWeight = (linesDiffNormalized * config[0] / linesFree);
-      workerLog(`linesHeuristicAfterLinesFreeWeight: ${linesHeuristicAfterLinesFreeWeight}`)
-      return linesHeuristicAfterLinesFreeWeight + heuristic;
+      linesDiffFunction = Math.atan(linesDiff) + 1
     }
+
+    return heuristic + (linesDiffFunction * config[0]);
   }
 
   heuristicExcess = (heuristic, currentTextWidth, currentMaxTextWidth, nextTextWidth, config) => {
@@ -83,9 +76,8 @@ class BestLineSplit {
 
     // si diff es positivo, es mejor hacer SPLIT ya que hay menos excess
     let diffNormalized = (excessOnPut - incessOnSplit) / (excessOnPut + incessOnSplit);
-    diffNormalized *= config[1];
 
-    return heuristic + diffNormalized;
+    return heuristic + (diffNormalized * config[1]);
   }
 
   calculateLineSplit = (config) => {
@@ -98,57 +90,40 @@ class BestLineSplit {
     while (wordIndex < this.wordLengths.length) {
       lineIndices.push(wordIndex);
       const lineNr = lineIndices.length - 1;
-      workerLog(`\n\nSTARTING ITERATION FOR LINE: ${lineNr}\n\n`, 0);
 
       let wordsAdded = 0;
       let currentTextWidth = 0;
 
       for (let index = wordIndex; index < this.wordLengths.length; index++) {
         const wordNr = index;
-        workerLog(`\nPROCESSING WORD: ${wordNr}\n`, 0)
         const value = this.wordLengths[index];
 
         let nextTextWidth;
         if (index === 0) nextTextWidth = value;
         else nextTextWidth = currentTextWidth + this.spaceLength + value;
 
-        workerLog(`nextTextWidth: ${nextTextWidth}`, 0)
-        workerLog(`currentMaxTextWidth: ${currentMaxTextWidth}`, 0)
-
         if (nextTextWidth <= currentMaxTextWidth) {
           // word is added to line
-          workerLog('Word added to line automatically', 0);
           wordsAdded += 1;
           currentTextWidth = nextTextWidth;
         } else {
-          workerLog('Deciding with heuristic', 0)
-
           // HEURISTIC DESIGN:
           //  1: split, -1: put
           let heuristic = 0;
-          workerLog(`Heuristic start: ${heuristic}`, 0);
 
           heuristic = this.heuristicLineSplit(heuristic, lineNr, currentMaxLinesNumber, currentMaxTextWidth, wordNr, config);
-          workerLog(`Heuristic after line split: ${heuristic}`, 0);
 
           heuristic = this.heuristicExcess(heuristic, currentTextWidth, currentMaxTextWidth, nextTextWidth, config);
-          workerLog(`Heuristic after excess: ${heuristic}`, 0);
 
           // - put always at least 1 word in the line 
           if (wordsAdded === 0) {
             heuristic = -1;
           }
 
-          // boost by some value
-          heuristic *= config[3];
-
-          workerLog(`FINAL HEURISTIC: ${heuristic}`, 0)
-          if (heuristic > 0.5) {
-            workerLog('Line Split (heuristic decision)', 0);
-            break;
+          if (heuristic > 0) {
+             break;
           } else {
-            workerLog('Word added to line (heuristic decision)', 0);
-            // word added to line + currentMaxTextWidth increases
+              // word added to line + currentMaxTextWidth increases
             currentMaxTextWidth = nextTextWidth;
             currentMaxTextHeight = currentMaxTextWidth / this.getIdealDimensions();
             currentMaxLinesNumber = Math.ceil(currentMaxTextHeight / this.textLineHeight);
@@ -169,45 +144,12 @@ class BestLineSplit {
   }
 
   fitness = (linesHeight, lineWidth) => {
-    // HISTORY
-    //  return computed.lineWidth + computed.linesHeight; 
-    // -> el problema de esta es que solo le importa que el ancho y alto sean minimos, no como estan repartidos
-
-    //    return (computed.lineWidth / computed.linesHeight) - (this.problemData.width / this.problemData.height);
-    // -> esta solo tiene en cuenta que la proporcion sea parecida, y no le importa si deja mucho espacio libre 
-
-    // const wSum = computed.lineWidth + this.problemData.width;
-    // const hSum = computed.linesHeight + this.problemData.height;
-
-    // const aW = computed.lineWidth / wSum;
-    // const bW = this.problemData.width / wSum;
-    // const aH = computed.linesHeight / hSum;
-    // const bH = this.problemData.height / hSum;
-
-    // return Math.abs(aW - bW) + Math.abs(aH - bH);
-
-    // TODO probar combinar zoom con dimensionlikelyness para obtener mejroes resultados (la segunda con muy poco valor, solo paradiferenciar entre zooms iguales)
-    //    const dimensionlikelyness = (this.problemData.width / this.problemData.height) - (computed.lineWidth / computed.linesHeight);
-    // computed.lineWidth / computed.linesHeight = this.problemData.width / this.problemData.height
-    //    const dimensionlikelyness = (computed.lineWidth / computed.linesHeight) - (this.problemData.width / this.problemData.height);
-
-    // const spaceFreeHeight = this.height - (zoom * linesHeight);
-    // const spaceFreeWidth = this.width - (zoom * lineWidth);
-
-    // const spaceFreeSumWeighted = (spaceFreeHeight + spaceFreeWidth) / 10000;
-
-    // workerLog(`spaceFreeHeight: ${spaceFreeHeight}`, 7);
-    // workerLog(`spaceFreeWidth: ${spaceFreeWidth}`, 7);
-    // workerLog(`spaceFreeSumWeighted: ${spaceFreeSumWeighted}`, 7);
-    // workerLog(`total: ${zoom - spaceFreeSumWeighted}`, 7);
-
     const verticalZoom = this.height / linesHeight;
     const horizontalZoom = this.width / lineWidth;
     const zoom = Math.min(
       verticalZoom,
       horizontalZoom
     );
-    workerLog(`zoom: ${zoom}`, 7);
     return zoom;
   }
 }
