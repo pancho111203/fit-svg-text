@@ -1,0 +1,3 @@
+ANALYSIS GENETIC ALG
+  - if i put many generations, usually the results are the same after gen ~5 or 10
+    - this could mean that mutation is not good enough, and when it arrives to a conclusion it's hard to unlearn it

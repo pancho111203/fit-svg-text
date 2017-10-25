@@ -4,10 +4,12 @@ import { getRandom, getRandomInt, workerLog, clone } from './helpers';
 import BestLineSplit from './BestLineSplit';
 import { MIN_MAX_CONFIGS, DEFAULT_CONFIG } from './config';
 
+// TODO maybe instead of picking one when crossing, i could get an average from father/mother
+// TODO mayne when mutating I could sum a random number between min/10 and max/10, instead of replacing completely (to keep some part of initial value)
+
 class GeneticAlg {
   constructor(problemData) {
     this.bestSonCallbacks = [];
-    this.genetic = null;
     this.shouldEnd = false;
     this.problemData = problemData;
 
@@ -157,40 +159,7 @@ class GeneticAlg {
   }
 
   fitness = (config, computed) => {
-    // TODO setup way of evaluating results
-
-    // HISTORY
-    //  return computed.lineWidth + computed.linesHeight; 
-    // -> el problema de esta es que solo le importa que el ancho y alto sean minimos, no como estan repartidos
-
-    //    return (computed.lineWidth / computed.linesHeight) - (this.problemData.width / this.problemData.height);
-    // -> esta solo tiene en cuenta que la proporcion sea parecida, y no le importa si deja mucho espacio libre 
-
-    // const wSum = computed.lineWidth + this.problemData.width;
-    // const hSum = computed.linesHeight + this.problemData.height;
-
-    // const aW = computed.lineWidth / wSum;
-    // const bW = this.problemData.width / wSum;
-    // const aH = computed.linesHeight / hSum;
-    // const bH = this.problemData.height / hSum;
-
-    // return Math.abs(aW - bW) + Math.abs(aH - bH);
-
-    // TODO probar combinar zoom con dimensionlikelyness para obtener mejroes resultados (la segunda con muy poco valor, solo paradiferenciar entre zooms iguales)
-    //    const dimensionlikelyness = (this.problemData.width / this.problemData.height) - (computed.lineWidth / computed.linesHeight);
-    //const dimensionlikelyness = (computed.lineWidth / computed.linesHeight) - (this.problemData.width / this.problemData.height);
-    //workerLog(dimensionlikelyness, 7);
-
-    const verticalZoom = this.problemData.height / computed.linesHeight;
-    const horizontalZoom = this.problemData.width / computed.lineWidth;
-    const zoom = Math.min(
-      verticalZoom,
-      horizontalZoom
-    );
-    workerLog(zoom, 7);
-    return zoom;
-    // TODO probar todas estas funciones de fitness!!!!
-    // return zoom + (dimensionlikelyness / 100)
+    return this.bestLineSplit.fitness(computed.linesHeight, computed.lineWidth);
   }
 
   replace = (sortedGen) => {

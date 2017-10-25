@@ -1,7 +1,8 @@
 import React from 'react';
 import _ from 'ramda';
 import WorkerAlg from './algorithm.worker';
-import ResultGraph from './ResultGraph';
+import ResultGraphGenetic from './ResultGraphGenetic';
+import ResultGraphSimulated from './ResultGraphSimulated';
 
 class FitText extends React.Component {
   constructor(props, context) {
@@ -24,15 +25,21 @@ class FitText extends React.Component {
         const bestSon = receivedObject.data;
         const recStat = receivedObject.stats;
         if (bestSon.lineIndices && bestSon.lineWidth && bestSon.linesHeight) {
-          const i = this.state.stats.length + 1;
-          const newStats = _.append({
-            ...recStat,
-            index: i
-          }, this.state.stats);
-          this.setState({
-            bestSon,
-            stats: newStats
-          });
+          if (!recStat) {
+            this.setState({
+              bestSon
+            })
+          } else {
+            const i = this.state.stats.length + 1;
+            const newStats = _.append({
+              ...recStat,
+              index: i
+            }, this.state.stats);
+            this.setState({
+              bestSon,
+              stats: newStats
+            });
+          }
         }
       } else if (receivedObject.type === 'log') {
         console.dir(receivedObject.data);
@@ -108,7 +115,11 @@ class FitText extends React.Component {
   }
 
   sendValuesToAlgorithm = (data) => {
-    this.worker.postMessage(data);
+    const msg = {
+      data,
+      algorithm: this.props.algorithm
+    }
+    this.worker.postMessage(msg);
   }
 
 
@@ -154,32 +165,36 @@ class FitText extends React.Component {
 
     return (
       <div style={styles.container}>
-        <svg width={width} height={height}>
-          <g>
-            <rect x="0" y="0" width={width} height={height} fill="#f99" />
-            <text
-              x="0"
-              y="0"
-              style={{ lineHeight: '5px' }}
-              stroke="#000"
-              dy="1em"
-              ref={c => (this.referenceElement = c)}
-              transform={zoom ? `scale(${zoom}, ${zoom})` : ''}
-            >
-              {lines ? lines.map((line, i) =>
-                <tspan key={i} x={0} dy="1em">
-                  {line}
-                </tspan>
-              ) : (
-                  <tspan x={0} dy="1em">
-                    {text}
+        <h2>{this.props.algorithm === 'simulated' ? 'Enfriamiento Simulado' : 'Algoritmo Genético'}</h2>
+        <div style={styles.innerContainer}>
+          <svg width={width} height={height}>
+            <g>
+              <rect x="0" y="0" width={width} height={height} fill="#f99" />
+              <text
+                x="0"
+                y="0"
+                style={{ lineHeight: '5px' }}
+                stroke="#000"
+                dy="1em"
+                ref={c => (this.referenceElement = c)}
+                transform={zoom ? `scale(${zoom}, ${zoom})` : ''}
+              >
+                {lines ? lines.map((line, i) =>
+                  <tspan key={i} x={0} dy="1em">
+                    {line}
                   </tspan>
-                )
-              }
-            </text>
-          </g>
-        </svg>
-        {this.props.showResultGraph ? <ResultGraph stats={this.state.stats} /> : null}
+                ) : (
+                    <tspan x={0} dy="1em">
+                      {text}
+                    </tspan>
+                  )
+                }
+              </text>
+            </g>
+          </svg>
+          {this.props.showResultGraph && this.props.algorithm === 'genetic' ? <ResultGraphGenetic style={styles.graphStyle} stats={this.state.stats} /> : null}
+          {this.props.showResultGraph && this.props.algorithm === 'simulated' ? <ResultGraphSimulated style={styles.graphStyle} stats={this.state.stats} /> : null}
+        </div>
       </div>
     );
   }
@@ -187,9 +202,22 @@ class FitText extends React.Component {
 
 const styles = {
   container: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    marginBottom: 80
+  },
+  innerContainer: {
     display: 'flex'
+  },
+  graphStyle: {
+    marginLeft: 80
   }
 }
+
+FitText.defaultProps = {
+  algorithm: 'genetic'
+};
 
 export default FitText;
 

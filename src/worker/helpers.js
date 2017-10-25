@@ -1,6 +1,6 @@
 
 export function workerLog(data, channel) {
-  if (channel === 9) {
+  if (channel === 10) {
     postMessage({
       type: 'log',
       data

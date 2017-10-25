@@ -167,6 +167,49 @@ class BestLineSplit {
       linesHeight: lineIndices.length * this.textLineHeight
     }
   }
+
+  fitness = (linesHeight, lineWidth) => {
+    // HISTORY
+    //  return computed.lineWidth + computed.linesHeight; 
+    // -> el problema de esta es que solo le importa que el ancho y alto sean minimos, no como estan repartidos
+
+    //    return (computed.lineWidth / computed.linesHeight) - (this.problemData.width / this.problemData.height);
+    // -> esta solo tiene en cuenta que la proporcion sea parecida, y no le importa si deja mucho espacio libre 
+
+    // const wSum = computed.lineWidth + this.problemData.width;
+    // const hSum = computed.linesHeight + this.problemData.height;
+
+    // const aW = computed.lineWidth / wSum;
+    // const bW = this.problemData.width / wSum;
+    // const aH = computed.linesHeight / hSum;
+    // const bH = this.problemData.height / hSum;
+
+    // return Math.abs(aW - bW) + Math.abs(aH - bH);
+
+    // TODO probar combinar zoom con dimensionlikelyness para obtener mejroes resultados (la segunda con muy poco valor, solo paradiferenciar entre zooms iguales)
+    //    const dimensionlikelyness = (this.problemData.width / this.problemData.height) - (computed.lineWidth / computed.linesHeight);
+    // computed.lineWidth / computed.linesHeight = this.problemData.width / this.problemData.height
+    //    const dimensionlikelyness = (computed.lineWidth / computed.linesHeight) - (this.problemData.width / this.problemData.height);
+
+    const verticalZoom = this.height / linesHeight;
+    const horizontalZoom = this.width / lineWidth;
+    const zoom = Math.min(
+      verticalZoom,
+      horizontalZoom
+    );
+    workerLog(`zoom: ${zoom}`, 7);
+
+    const spaceFreeHeight = this.height - (zoom * linesHeight);
+    const spaceFreeWidth = this.width - (zoom * lineWidth);
+
+    const spaceFreeSumWeighted = (spaceFreeHeight + spaceFreeWidth) / 10000;
+
+    workerLog(`spaceFreeHeight: ${spaceFreeHeight}`, 7);
+    workerLog(`spaceFreeWidth: ${spaceFreeWidth}`, 7);
+    workerLog(`spaceFreeSumWeighted: ${spaceFreeSumWeighted}`, 7);
+    workerLog(`total: ${zoom - spaceFreeSumWeighted}`, 7);
+    return zoom - spaceFreeSumWeighted;
+  }
 }
 
 export default BestLineSplit;
