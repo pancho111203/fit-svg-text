@@ -1,7 +1,6 @@
 import GeneticAlg from './worker/GeneticAlg';
 import SimulatedAnnealing from './worker/SimulatedAnnealing';
 
-import { workerLog } from './worker/helpers';
 let genetic = null;
 let simulated = null;
 self.onmessage = function (msg) {

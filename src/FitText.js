@@ -87,11 +87,15 @@ class FitText extends React.Component {
     const result = [];
     let wordMatch;
     while ((wordMatch = regex.exec(text))) {
-      const width = this.referenceElement.getSubStringLength(
-        wordMatch.index,
-        wordMatch[0].length
-      );
-      result.push(width);
+      try {
+        const width = this.referenceElement.getSubStringLength(
+          wordMatch.index,
+          wordMatch[0].length
+        );
+        result.push(width);
+      } catch (e) {
+        console.log(e);
+      }
     }
 
     this.wordLengths = result;
@@ -169,7 +173,7 @@ class FitText extends React.Component {
         <div style={styles.innerContainer}>
           <svg width={width} height={height}>
             <g>
-              <rect x="0" y="0" width={width} height={height} fill="#f99" />
+              <rect x="0" y="0" width={width} height={height} fill="#D4E5C3" />
               <text
                 x="0"
                 y="0"

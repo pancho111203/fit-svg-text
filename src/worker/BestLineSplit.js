@@ -191,6 +191,16 @@ class BestLineSplit {
     // computed.lineWidth / computed.linesHeight = this.problemData.width / this.problemData.height
     //    const dimensionlikelyness = (computed.lineWidth / computed.linesHeight) - (this.problemData.width / this.problemData.height);
 
+    // const spaceFreeHeight = this.height - (zoom * linesHeight);
+    // const spaceFreeWidth = this.width - (zoom * lineWidth);
+
+    // const spaceFreeSumWeighted = (spaceFreeHeight + spaceFreeWidth) / 10000;
+
+    // workerLog(`spaceFreeHeight: ${spaceFreeHeight}`, 7);
+    // workerLog(`spaceFreeWidth: ${spaceFreeWidth}`, 7);
+    // workerLog(`spaceFreeSumWeighted: ${spaceFreeSumWeighted}`, 7);
+    // workerLog(`total: ${zoom - spaceFreeSumWeighted}`, 7);
+
     const verticalZoom = this.height / linesHeight;
     const horizontalZoom = this.width / lineWidth;
     const zoom = Math.min(
@@ -198,17 +208,7 @@ class BestLineSplit {
       horizontalZoom
     );
     workerLog(`zoom: ${zoom}`, 7);
-
-    const spaceFreeHeight = this.height - (zoom * linesHeight);
-    const spaceFreeWidth = this.width - (zoom * lineWidth);
-
-    const spaceFreeSumWeighted = (spaceFreeHeight + spaceFreeWidth) / 10000;
-
-    workerLog(`spaceFreeHeight: ${spaceFreeHeight}`, 7);
-    workerLog(`spaceFreeWidth: ${spaceFreeWidth}`, 7);
-    workerLog(`spaceFreeSumWeighted: ${spaceFreeSumWeighted}`, 7);
-    workerLog(`total: ${zoom - spaceFreeSumWeighted}`, 7);
-    return zoom - spaceFreeSumWeighted;
+    return zoom;
   }
 }
 
